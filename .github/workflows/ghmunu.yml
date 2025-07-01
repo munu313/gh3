@@ -10,7 +10,7 @@ on:
 
 env:
   DOTNET_VERSION: '6.0.x'
-  OUTPUT_PATH: 'ConsoleApp4/obj/Release/net6.0'
+  OUTPUT_PATH: 'bin/Release/net6.0'
 
 jobs:
   build-and-package:
