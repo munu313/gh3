@@ -10,10 +10,11 @@ on:
 
 env:
   DOTNET_VERSION: '6.0.x'
+  OUTPUT_PATH: 'ConsoleApp4/obj/Release/net6.0'
 
 jobs:
   build-and-package:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -34,11 +35,11 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal
 
       - name: Publish app
-        run: dotnet publish --configuration Release --output publish
+        run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-build
-          path: publish
+          path: ${{ env.OUTPUT_PATH }}
           retention-days: 7
