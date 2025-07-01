@@ -8,6 +8,7 @@ namespace ConsoleApp4
         {
             Console.WriteLine("Hello World!");
             Console.ReadLine();
+            //This is a test github action
         }
     }
 }
