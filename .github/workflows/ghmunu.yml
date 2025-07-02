@@ -1,96 +1,74 @@
-name: Build and Package
+name: Build, Package & Notify
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - 'README.md'
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   DOTNET_VERSION: '6.0.x'
   OUTPUT_PATH: 'bin/Release/net6.0'
-  ARTIFACT_NAME: 'dotnet-build'
 
 jobs:
   build-and-package:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
-        run: dotnet restore
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
 
-      - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+    - name: Restore dependencies
+      run: dotnet restore
 
-      - name: Run tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
 
-      - name: Publish app
-        run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.OUTPUT_PATH }}
-          retention-days: 7
+    - name: Publish app
+      run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
 
-      - name: Send email with HTML button
-        if: always()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          secure: true
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: Build Artifact Uploaded for Commit ${{ github.sha }}
-          to: ${{ secrets.EMAIL_TO }}
-          from: ${{ secrets.EMAIL_FROM }}
-          content_type: text/html
-          html_body: |
-            <p>The build and packaging process completed successfully.</p>
-            <p><strong>Artifact:</strong> ${{ env.ARTIFACT_NAME }}</p>
-            <p>
-              <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                 style="display:inline-block;
-                        padding:10px 20px;
-                        background-color:#1e90ff;
-                        color:#ffffff;
-                        text-decoration:none;
-                        border-radius:4px;">
-                📥 Download Artifact
-              </a>
-            </p>
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-build
+        path: ${{ env.OUTPUT_PATH }}
+        retention-days: 7
 
-      - name: Add PR comment with artifact link
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const runId = context.runId;
-            const repo = context.repo;
-            const issueNumber = context.issue.number;
-            const artifactLink = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}/artifacts/${process.env.ARTIFACT_NAME}`;
-            const comment = `
-              ## ✅ Build Artifact Ready
-              | Build Name | Download Link |
-              | --- | --- |
-              | 🌎 Artifact Download | [Download](${artifactLink}) |
-            `;
-            await github.rest.issues.createComment({
-              owner: repo.owner,
-              repo: repo.repo,
-              issue_number: issueNumber,
-              body: comment
-            });
+    - name: Send email with artifact info
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.SMTP_SERVER }}
+        server_port: ${{ secrets.SMTP_PORT }}
+        secure: true
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        subject: Build Artifact Uploaded for Commit ${{ github.sha }}
+        to: ${{ secrets.EMAIL_TO }}
+        from: ${{ secrets.EMAIL_FROM }}
+        content_type: text/html
+        html_body: |
+          <p>The build and packaging process completed successfully.</p>
+          <ul>
+            <li><b>Artifact name:</b> dotnet-build</li>
+            <li><b>Artifact path:</b> ${{ env.OUTPUT_PATH }}</li>
+            <li><b>Download:</b> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a></li>
+          </ul>
+        convert_markdown: false
