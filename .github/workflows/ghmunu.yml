@@ -43,3 +43,24 @@ jobs:
           name: dotnet-build
           path: ${{ env.OUTPUT_PATH }}
           retention-days: 7
+
+      - name: Send email with artifact info
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Build Artifact Uploaded for Commit ${{ github.sha }}
+          to: ${{ secrets.EMAIL_TO }}
+          from: ${{ secrets.EMAIL_FROM }}
+          content_type: text/plain
+          body: |
+            The build and packaging process completed successfully.
+
+            Artifact name: dotnet-build
+            Artifact path: ${{ env.OUTPUT_PATH }}
+
+            You can download the artifact from the GitHub Actions workflow run page:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
