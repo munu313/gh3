@@ -3,18 +3,16 @@ name: Build, Package & Notify
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'README.md'
+    paths-ignore: ['README.md']
   pull_request:
     branches: [main]
-
-env:
-  DOTNET_VERSION: '6.0.x'
-  OUTPUT_PATH: 'bin/Release/net6.0'
 
 jobs:
   build-and-package:
     runs-on: windows-latest
+    env:
+      DOTNET_VERSION: '6.0.x'         # Must be defined at job level
+      OUTPUT_PATH: 'bin/Release/net6.0'
 
     steps:
       - name: Checkout repository
@@ -45,7 +43,8 @@ jobs:
       - name: Publish app
         run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
 
-      - name: Upload build artifact
+      - id: upload_artifact
+        name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-build
@@ -56,9 +55,9 @@ jobs:
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}  # e.g., 587
-          secure: false       # disable immediate SSL
-          starttls: true      # enable STARTTLS after greeting
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: false    # Enables STARTTLS on port 587
+          starttls: true
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: Build Artifact Uploaded for Commit ${{ github.sha }}
@@ -66,10 +65,11 @@ jobs:
           from: ${{ secrets.EMAIL_FROM }}
           content_type: text/html
           html_body: |
-            <p>The build and packaging process completed successfully!</p>
+            <p>✅ Build succeeded and the artifact is ready!</p>
             <ul>
-              <li><b>Artifact:</b> dotnet-build</li>
-              <li><b>Path:</b> ${{ env.OUTPUT_PATH }}</li>
-              <li><b>Download:</b> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a></li>
+              <li><strong>Artifact:</strong> dotnet‑build</li>
+              <li><strong>Path:</strong> ${{ env.OUTPUT_PATH }}</li>
+              <li><strong>GitHub UI:</strong> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View workflow run</a></li>
+              <li><strong>Direct download:</strong> <a href="https://github.com/${{ github.repository }}/actions/artifacts/${{ steps.upload_artifact.outputs.artifact_id }}/zip?access_token=${{ secrets.PAT_TOKEN }}">Download ZIP (no login)</a></li>
             </ul>
           convert_markdown: false
