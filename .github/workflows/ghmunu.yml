@@ -17,58 +17,59 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Cache NuGet packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build solution
-      run: dotnet build --configuration Release --no-restore
+      - name: Build solution
+        run: dotnet build --configuration Release --no-restore
 
-    - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
 
-    - name: Publish app
-      run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
+      - name: Publish app
+        run: dotnet publish --configuration Release --output ${{ env.OUTPUT_PATH }}
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: dotnet-build
-        path: ${{ env.OUTPUT_PATH }}
-        retention-days: 7
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-build
+          path: ${{ env.OUTPUT_PATH }}
+          retention-days: 7
 
-    - name: Send email with artifact info
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: ${{ secrets.SMTP_SERVER }}
-        server_port: ${{ secrets.SMTP_PORT }}
-        secure: true
-        username: ${{ secrets.SMTP_USERNAME }}
-        password: ${{ secrets.SMTP_PASSWORD }}
-        subject: Build Artifact Uploaded for Commit ${{ github.sha }}
-        to: ${{ secrets.EMAIL_TO }}
-        from: ${{ secrets.EMAIL_FROM }}
-        content_type: text/html
-        html_body: |
-          <p>The build and packaging process completed successfully.</p>
-          <ul>
-            <li><b>Artifact name:</b> dotnet-build</li>
-            <li><b>Artifact path:</b> ${{ env.OUTPUT_PATH }}</li>
-            <li><b>Download:</b> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a></li>
-          </ul>
-        convert_markdown: false
+      - name: Send email with artifact info
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}  # e.g., 587
+          secure: false       # disable immediate SSL
+          starttls: true      # enable STARTTLS after greeting
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Build Artifact Uploaded for Commit ${{ github.sha }}
+          to: ${{ secrets.EMAIL_TO }}
+          from: ${{ secrets.EMAIL_FROM }}
+          content_type: text/html
+          html_body: |
+            <p>The build and packaging process completed successfully!</p>
+            <ul>
+              <li><b>Artifact:</b> dotnet-build</li>
+              <li><b>Path:</b> ${{ env.OUTPUT_PATH }}</li>
+              <li><b>Download:</b> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a></li>
+            </ul>
+          convert_markdown: false
