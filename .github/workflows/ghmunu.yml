@@ -2,11 +2,11 @@ name: Build and Package
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - 'README.md'
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   DOTNET_VERSION: '6.0.x'
@@ -15,7 +15,6 @@ env:
 jobs:
   build-and-package:
     runs-on: windows-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -44,23 +43,27 @@ jobs:
           path: ${{ env.OUTPUT_PATH }}
           retention-days: 7
 
-      - name: Send email with artifact info
+      - name: Send email with artifact link
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: Build Artifact Uploaded for Commit ${{ github.sha }}
+          connection_url: ${{ secrets.MAIL_CONNECTION }}
+          subject: Build Artifact for Commit ${{ github.sha }}
           to: ${{ secrets.EMAIL_TO }}
           from: ${{ secrets.EMAIL_FROM }}
-          content_type: text/plain
-          body: |
-            The build and packaging process completed successfully.
-
-            Artifact name: dotnet-build
-            Artifact path: ${{ env.OUTPUT_PATH }}
-
-            You can download the artifact from the GitHub Actions workflow run page:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+          content_type: text/html
+          html_body: |
+            <html>
+              <body>
+                <p>The build and packaging process completed successfully.</p>
+                <p><strong>Artifact:</strong> dotnet-build</p>
+                <p>
+                  <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                     style="display:inline-block;padding:10px 20px;
+                            background:#1e90ff;color:#fff;text-decoration:none;
+                            border-radius:5px;">
+                    📥 Download Artifact
+                  </a>
+                </p>
+              </body>
+            </html>
