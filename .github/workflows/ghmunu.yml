@@ -26,7 +26,7 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
-          path: ~/.nuget/packages
+          path: C:\Users\runneradmin\.nuget\packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -69,7 +69,4 @@ jobs:
             <ul>
               <li><strong>Artifact:</strong> dotnet‑build</li>
               <li><strong>Path:</strong> ${{ env.OUTPUT_PATH }}</li>
-              <li><strong>GitHub UI:</strong> <a href="https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View workflow run</a></li>
-              <li><strong>Direct download:</strong> <a href="https://github.com/${{ github.repository }}/actions/artifacts/${{ steps.upload_artifact.outputs.artifact_id }}/zip?access_token=${{ secrets.PAT_TOKEN }}">Download ZIP (no login)</a></li>
-            </ul>
-          convert_markdown: false
+              <li><strong>GitHub UI:</strong> <a href="https://${{ git
